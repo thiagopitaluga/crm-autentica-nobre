@@ -1,3 +1,4 @@
 work/
 .vercel/
 node_modules/
+dist/
