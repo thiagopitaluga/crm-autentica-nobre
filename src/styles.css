@@ -105,6 +105,11 @@ h1 {
   border-color: #9cb5f5;
   box-shadow: 0 4px 14px #0f2e6410;
 }
+.metric.selected {
+  border-color: var(--blue);
+  background: #eff4ff;
+  box-shadow: 0 0 0 3px #155eef18;
+}
 .metric span {
   display: block;
   color: var(--muted);
@@ -142,6 +147,20 @@ h1 {
   color: #475467;
   font-size: 13px;
 }
+.calendar-range {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 39px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 8px;
+  background: white;
+  color: #475467;
+  font-size: 12px;
+}
+.calendar-range .date-filter { border: 0; height: 30px; padding: 0; }
+.calendar-range .date-filter input { min-width: 112px; }
 .search {
   display: flex;
   align-items: center;
@@ -179,6 +198,20 @@ h1 {
   font-size: 13px;
   font-weight: 750;
 }
+.filter-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -8px 0 16px;
+  padding: 10px 12px;
+  border: 1px solid #b9c7ef;
+  border-radius: 9px;
+  background: #eff4ff;
+  color: #344054;
+  font-size: 13px;
+}
+.filter-feedback button { border: 0; background: transparent; color: var(--blue); font-weight: 750; }
 .view-tabs {
   border-bottom: 1px solid var(--line);
   display: flex;
@@ -348,6 +381,8 @@ h1 {
   display: block;
   padding: 10px;
 }
+.pipeline .pipeline-actions { margin: 10px 0 0; display: grid; grid-template-columns: 1fr; }
+.pipeline .pipeline-actions .whatsapp, .pipeline .pipeline-actions .status-select { width: 100%; }
 .pipeline .lead-main {
   width: 100%;
   align-items: flex-start;
@@ -390,6 +425,7 @@ h1 {
   font-size: 25px;
   margin: 5px 0 25px;
 }
+.drawer-whatsapp { width: 100%; margin: -12px 0 20px; padding: 11px; font-size: 13px; }
 .drawer-close {
   position: absolute;
   right: 18px;
@@ -475,7 +511,8 @@ form textarea {
     flex: none;
   }
   .date-filter,
-  .clear-filters { flex: none; }
+  .clear-filters,
+  .calendar-range { flex: none; }
   .search {
     min-width: 260px;
   }
