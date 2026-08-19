@@ -19,7 +19,8 @@ export function origin(lead) {
 }
 export function displayInterest(lead) {
   const raw = String(interest(lead));
-  return raw.toLowerCase().replace(/[\s_-]+/g, '') === 'uniroutilaoagradavel' ? 'Unir o útil ao agradável' : raw;
+  const normalized = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[\s_-]+/g, '');
+  return normalized === 'uniroutilaoagradavel' ? 'Unir o útil ao agradável' : raw;
 }
 export const normalizePhone = (phone) => String(phone || '').replace(/\D/g, '');
 export function whatsappUrl(lead) {
