@@ -42,6 +42,12 @@ function doPost(e) {
 
 > Para produção com dados pessoais, proteja a API com autenticação (por exemplo, um backend com Google service account). Um Web App aberto não deve ficar exposto sem um controle de acesso adequado.
 
+## Atualização automática de leads
+
+Depois que a aba de origem estiver acessível, o painel consulta a planilha automaticamente a cada **60 segundos**. Todo novo registro recebido do Meta aparece no CRM sem cadastro manual, com `Status CRM = Novo`. A atualização também pode ser disparada pelo botão de recarregar.
+
+O endereço informado atualmente responde `401` (planilha privada), então o painel não consegue ler os leads reais até que você libere acesso de leitura ou disponibilize uma API autenticada.
+
 ## Executar localmente
 
 Como é uma aplicação estática, use qualquer servidor local, por exemplo: `npx serve .`.

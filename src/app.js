@@ -1,11 +1,11 @@
-import { CRM_STATUSES, PIPELINE_STATUSES } from './config.js';
+import { CRM_STATUSES, LEAD_SYNC_INTERVAL_MS, PIPELINE_STATUSES } from './config.js';
 import { loadGoogleSheetLeads } from './data/sheets.js';
 import { loadCrmRecords, persistCrmRecord } from './data/crm-api.js';
 import { sampleLeads } from './data/sample-leads.js';
 import { budget, dedupeAndSort, formatDate, interest, leadDateValue, leadId, normalizePhone, value, whatsappUrl } from './utils/leads.js';
 
 const app = document.querySelector('#app');
-const state = { leads: [], crm: {}, view: 'list', selected: null, query: '', filters: {} };
+const state = { leads: [], crm: {}, view: 'list', selected: null, query: '', filters: {}, syncing: false };
 const esc = (text = '') => String(text).replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[c]));
 const crmOf = lead => ({ status: 'Novo', ...state.crm[leadId(lead)] });
 const nameOf = lead => value(lead, 'nome_completo') || 'Lead sem nome';
@@ -54,11 +54,24 @@ function bind() {
   document.querySelectorAll('[data-whatsapp]').forEach(el => el.addEventListener('click', async () => { const lead=state.leads.find(l=>leadId(l)===el.dataset.whatsapp); const crm=crmOf(lead); const now=new Date().toISOString().slice(0,16); await save(lead,{ ...(crm.status==='Novo'?{status:'Contato iniciado'}:{}), firstContact:crm.firstContact||now, lastContact:now }); window.open(whatsappUrl(lead),'_blank','noopener'); }));
   document.querySelector('#close-drawer')?.addEventListener('click',()=>{state.selected=null;render();}); document.querySelector('#drawer-close')?.addEventListener('click',()=>{state.selected=null;render();});
   document.querySelector('#crm-form')?.addEventListener('submit', async e => { e.preventDefault(); const values=Object.fromEntries(new FormData(e.currentTarget)); await save(state.selected,values); });
-  document.querySelector('#refresh')?.addEventListener('click', initialize);
+  document.querySelector('#refresh')?.addEventListener('click', () => syncLeads());
+}
+async function syncLeads({ initial = false } = {}) {
+  if (state.syncing) return;
+  state.syncing = true;
+  try {
+    const sheet = await loadGoogleSheetLeads();
+    state.leads = dedupeAndSort(sheet);
+    state.source = `Planilha conectada · atualizada ${new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(new Date())}`;
+  } catch {
+    if (initial) state.leads = dedupeAndSort(sampleLeads);
+    state.source = 'Planilha indisponível · modo demonstração';
+  } finally { state.syncing = false; }
+  render();
 }
 async function initialize() {
-  try { const [sheet, crm] = await Promise.all([loadGoogleSheetLeads(),loadCrmRecords()]); state.leads=dedupeAndSort(sheet); state.crm=crm; state.source='Planilha conectada'; if (!state.leads.length) throw new Error(); }
-  catch { state.leads=dedupeAndSort(sampleLeads); state.crm=await loadCrmRecords(); state.source='Modo demonstração'; }
-  render();
+  state.crm = await loadCrmRecords();
+  await syncLeads({ initial: true });
+  window.setInterval(() => syncLeads(), LEAD_SYNC_INTERVAL_MS);
 }
 initialize();

@@ -8,6 +8,7 @@ export const SHEETS_CONFIG = {
 // Cole aqui a URL do Web App do Apps Script para persistir os dados do CRM na aba "CRM".
 // Sem ela, o painel funciona em modo local (localStorage), ótimo para demonstração.
 export const CRM_API_URL = '';
+export const LEAD_SYNC_INTERVAL_MS = 60_000;
 
 export const CRM_STATUSES = ['Novo', 'Contato iniciado', 'Conversando', 'Qualificado', 'Visita agendada', 'Proposta', 'Venda', 'Sem interesse', 'Sem resposta'];
 export const PIPELINE_STATUSES = CRM_STATUSES.slice(0, 7);
