@@ -1,6 +1,6 @@
-import { CRM_STATUSES, LEAD_SYNC_INTERVAL_MS, PIPELINE_STATUSES } from './config.js';
+import { CRM_API_URL, CRM_STATUSES, LEAD_SYNC_INTERVAL_MS, PIPELINE_STATUSES } from './config.js';
 import { loadGoogleSheetLeads } from './data/sheets.js';
-import { loadCrmRecords, persistCrmRecord } from './data/crm-api.js';
+import { loadCrmRecords, loadCrmSnapshot, persistCrmRecord } from './data/crm-api.js';
 import { sampleLeads } from './data/sample-leads.js';
 import { budget, dedupeAndSort, formatDate, interest, leadDateValue, leadId, normalizePhone, value, whatsappUrl } from './utils/leads.js';
 
@@ -60,8 +60,9 @@ async function syncLeads({ initial = false } = {}) {
   if (state.syncing) return;
   state.syncing = true;
   try {
-    const sheet = await loadGoogleSheetLeads();
-    state.leads = dedupeAndSort(sheet);
+    const snapshot = CRM_API_URL ? await loadCrmSnapshot() : { leads: await loadGoogleSheetLeads() };
+    state.leads = dedupeAndSort(snapshot.leads);
+    if (snapshot.crm) state.crm = snapshot.crm;
     state.source = `Planilha conectada · atualizada ${new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(new Date())}`;
   } catch {
     if (initial) state.leads = dedupeAndSort(sampleLeads);
@@ -70,7 +71,7 @@ async function syncLeads({ initial = false } = {}) {
   render();
 }
 async function initialize() {
-  state.crm = await loadCrmRecords();
+  if (!CRM_API_URL) state.crm = await loadCrmRecords();
   await syncLeads({ initial: true });
   window.setInterval(() => syncLeads(), LEAD_SYNC_INTERVAL_MS);
 }

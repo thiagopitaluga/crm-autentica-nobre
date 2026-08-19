@@ -20,7 +20,7 @@ O vínculo é sempre `lead_id` (a coluna `id` do Meta). Status Meta e Status CRM
    `lead_id | status | owner | firstContact | lastContact | notes | visitDate | result | updatedAt`
 3. Compartilhe a planilha com **qualquer pessoa com o link: leitor** (ou publique a aba), para permitir a leitura pelo painel.
 4. Em `src/config.js`, confira o `spreadsheetId` e o `gid` da aba `LEADS_META`.
-5. Para gravação compartilhada, crie um projeto Apps Script anexado à planilha, cole o script abaixo e publique como **Web app** (executar como você; acesso conforme a política da equipe). Depois, cole a URL publicada em `CRM_API_URL`.
+5. Para leitura e gravação compartilhada, publique o Apps Script como **Web app**, com “Executar como: você” e acesso permitido ao público que usará o painel. Depois, cole a URL `/exec` publicada em `CRM_API_URL`.
 
 ```js
 const SHEET = 'CRM';
@@ -46,7 +46,7 @@ function doPost(e) {
 
 Depois que a aba de origem estiver acessível, o painel consulta a planilha automaticamente a cada **60 segundos**. Todo novo registro recebido do Meta aparece no CRM sem cadastro manual, com `Status CRM = Novo`. A atualização também pode ser disparada pelo botão de recarregar.
 
-O endereço informado atualmente responde `401` (planilha privada), então o painel não consegue ler os leads reais até que você libere acesso de leitura ou disponibilize uma API autenticada.
+O painel usa a URL do Apps Script como fonte única quando `CRM_API_URL` estiver configurada. Se a API devolver `401` ou HTML de login, o CRM exibe o modo demonstração para não misturar dados de exemplo com os dados reais.
 
 ## Executar localmente
 
