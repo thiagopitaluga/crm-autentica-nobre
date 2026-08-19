@@ -97,6 +97,13 @@ h1 {
   background: white;
   padding: 15px;
   min-height: 83px;
+  text-align: left;
+  color: var(--ink);
+  transition: 0.15s;
+}
+.metric:hover {
+  border-color: #9cb5f5;
+  box-shadow: 0 4px 14px #0f2e6410;
 }
 .metric span {
   display: block;
@@ -124,7 +131,9 @@ h1 {
   margin-bottom: 20px;
 }
 .toolbar select,
-.search {
+.search,
+.date-filter,
+.date-filter input {
   height: 39px;
   border: 1px solid var(--line);
   background: white;
@@ -144,6 +153,31 @@ h1 {
   outline: 0;
   width: 100%;
   color: var(--ink);
+}
+.date-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.date-filter input {
+  border: 0;
+  outline: 0;
+  padding: 0;
+  min-width: 126px;
+  color: var(--ink);
+}
+.clear-filters {
+  border: 1px solid #b9c7ef;
+  border-radius: 8px;
+  background: #eff4ff;
+  color: var(--blue);
+  padding: 0 13px;
+  height: 39px;
+  font-size: 13px;
+  font-weight: 750;
 }
 .view-tabs {
   border-bottom: 1px solid var(--line);
@@ -440,6 +474,8 @@ form textarea {
   .toolbar select {
     flex: none;
   }
+  .date-filter,
+  .clear-filters { flex: none; }
   .search {
     min-width: 260px;
   }

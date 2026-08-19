@@ -11,6 +11,16 @@ const crmOf = lead => ({ status: 'Novo', ...state.crm[leadId(lead)] });
 const nameOf = lead => value(lead, 'nome_completo') || 'Lead sem nome';
 const initials = name => name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
 const today = () => new Date().toDateString();
+const toDateInput = (date) => { const offset = date.getTimezoneOffset(); return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 10); };
+const dateStart = (value) => value ? new Date(`${value}T00:00:00`) : null;
+const dateEnd = (value) => value ? new Date(`${value}T23:59:59.999`) : null;
+function isInPeriod(lead, filters) {
+  const date = new Date(value(lead, 'created_time'));
+  if (Number.isNaN(date.valueOf())) return !filters.start && !filters.end && !filters.period;
+  if (filters.start && date < dateStart(filters.start)) return false;
+  if (filters.end && date > dateEnd(filters.end)) return false;
+  return true;
+}
 
 function options(key) { return [...new Set(state.leads.map(l => key === 'interest' ? displayInterest(l) : key === 'origin' ? origin(l) : value(l, key)).filter(Boolean))].sort(); }
 function filtered() {
@@ -18,11 +28,23 @@ function filtered() {
   return state.leads.filter(lead => {
     const crm = crmOf(lead); const text = [nameOf(lead), value(lead, 'número_do_whatsapp'), value(lead, 'email')].join(' ').toLowerCase();
     const created = new Date(value(lead, 'created_time'));
-    return (!q || text.includes(q)) && (!f.campaign || value(lead,'campaign_name') === f.campaign) && (!f.adset || value(lead,'adset_name') === f.adset) && (!f.origin || origin(lead) === f.origin) && (!f.interest || displayInterest(lead) === f.interest) && (!f.status || crm.status === f.status) && (!f.owner || crm.owner === f.owner) && (!f.period || (f.period === 'today' ? created.toDateString() === today() : true));
+    return (!q || text.includes(q)) && (!f.campaign || value(lead,'campaign_name') === f.campaign) && (!f.adset || value(lead,'adset_name') === f.adset) && (!f.origin || origin(lead) === f.origin) && (!f.interest || displayInterest(lead) === f.interest) && (!f.status || crm.status === f.status) && (!f.owner || crm.owner === f.owner) && (!f.uncontacted || (!crm.firstContact && crm.status === 'Novo')) && isInPeriod(lead, f);
   });
 }
 function selectOptions(items, selected, placeholder) { return `<option value="">${placeholder}</option>${items.map(x => `<option ${x === selected ? 'selected':''}>${esc(x)}</option>`).join('')}`; }
-function metric(label, count, tone = '') { return `<article class="metric ${tone}"><span>${label}</span><strong>${count}</strong></article>`; }
+function applyPeriodPreset(period) {
+  const now = new Date(); let start = null; let end = null;
+  if (period === 'today') start = end = now;
+  if (period === 'yesterday') { start = new Date(now); start.setDate(now.getDate() - 1); end = start; }
+  if (period === 'last7') { start = new Date(now); start.setDate(now.getDate() - 6); end = now; }
+  if (period === 'month') { start = new Date(now.getFullYear(), now.getMonth(), 1); end = now; }
+  if (period === 'last30') { start = new Date(now); start.setDate(now.getDate() - 29); end = now; }
+  state.filters.period = period;
+  state.filters.start = start ? toDateInput(start) : '';
+  state.filters.end = end ? toDateInput(end) : '';
+}
+function clearFilters() { state.query = ''; state.filters = {}; }
+function metric(label, count, tone = '', filter = 'all') { return `<button class="metric ${tone}" data-metric="${filter}"><span>${label}</span><strong>${count}</strong></button>`; }
 function renderLead(lead, compact = false) {
   const crm = crmOf(lead), phone = normalizePhone(value(lead, 'número_do_whatsapp')), url = whatsappUrl(lead);
   return `<article class="lead-card" data-id="${esc(leadId(lead))}"><button class="lead-main" data-open="${esc(leadId(lead))}"><span class="avatar">${initials(nameOf(lead))}</span><span class="lead-copy"><strong>${esc(nameOf(lead))}</strong><span class="lead-meta"><small><b>Interesse</b> ${esc(displayInterest(lead))}</small><small><b>Parcela</b> ${esc(budget(lead))}</small><small><b>Origem</b> ${esc(origin(lead))}</small><small>${formatDate(value(lead,'created_time'))}</small></span></span><span class="status status-${crm.status.replaceAll(' ','-').toLowerCase()}">${esc(crm.status)}</span></button>${!compact ? `<div class="lead-actions"><select class="status-select" data-status="${esc(leadId(lead))}">${CRM_STATUSES.map(status => `<option ${status === crm.status ? 'selected' : ''}>${status}</option>`).join('')}</select><button class="whatsapp" data-whatsapp="${esc(leadId(lead))}" ${phone ? '' : 'disabled'}>${phone ? '◉ Chamar no WhatsApp' : 'Telefone não informado'}</button></div>` : ''}</article>`;
@@ -32,8 +54,8 @@ function render() {
   const todayLeads = state.leads.filter(l => new Date(value(l,'created_time')).toDateString() === today());
   const noContact = state.leads.filter(l => !crmOf(l).firstContact && crmOf(l).status === 'Novo');
   app.innerHTML = `<main><header><div><p class="eyebrow">CENTRAL DE ATENDIMENTO</p><h1>Autêntica Nobre</h1><p class="subtitle">Corretora Morgana Fernandes</p></div><div class="header-actions"><span class="data-source">● ${state.source || 'Carregando'}</span><button id="refresh" class="icon-button" title="Atualizar">↻</button></div></header>
-  <section class="metrics">${metric('Total de leads', state.leads.length)}${metric('Leads hoje',todayLeads.length,'blue')}${metric('Leads novos',byStatus('Novo').length,'green')}${metric('Sem contato',noContact.length,'orange')}${metric('Qualificados',byStatus('Qualificado').length)}${metric('Visitas agendadas',byStatus('Visita agendada').length)}${metric('Vendas',byStatus('Venda').length,'green')}</section>
-  <section class="toolbar"><label class="search">⌕ <input id="search" placeholder="Buscar nome, WhatsApp ou e-mail" value="${esc(state.query)}"></label><select data-filter="period">${selectOptions(['today'],state.filters.period,'Todo o período')}</select><select data-filter="campaign">${selectOptions(options('campaign_name'),state.filters.campaign,'Campanhas')}</select><select data-filter="adset">${selectOptions(options('adset_name'),state.filters.adset,'Conjuntos')}</select><select data-filter="origin">${selectOptions(options('origin'),state.filters.origin,'Origem')}</select><select data-filter="interest">${selectOptions(options('interest'),state.filters.interest,'Interesse')}</select><select data-filter="status">${selectOptions(CRM_STATUSES,state.filters.status,'Status CRM')}</select><select data-filter="owner">${selectOptions(options('owner'),state.filters.owner,'Responsável')}</select></section>
+  <section class="metrics">${metric('Total de leads', state.leads.length,'','all')}${metric('Leads hoje',todayLeads.length,'blue','today')}${metric('Leads novos',byStatus('Novo').length,'green','Novo')}${metric('Sem contato',noContact.length,'orange','uncontacted')}${metric('Qualificados',byStatus('Qualificado').length,'','Qualificado')}${metric('Visitas agendadas',byStatus('Visita agendada').length,'','Visita agendada')}${metric('Vendas',byStatus('Venda').length,'green','Venda')}</section>
+  <section class="toolbar"><label class="search">⌕ <input id="search" placeholder="Buscar nome, WhatsApp ou e-mail" value="${esc(state.query)}"></label><select data-filter="period"><option value="">Período</option><option value="today" ${state.filters.period==='today'?'selected':''}>Hoje</option><option value="yesterday" ${state.filters.period==='yesterday'?'selected':''}>Ontem</option><option value="last7" ${state.filters.period==='last7'?'selected':''}>Últimos 7 dias</option><option value="month" ${state.filters.period==='month'?'selected':''}>Este mês</option><option value="last30" ${state.filters.period==='last30'?'selected':''}>Últimos 30 dias</option></select><label class="date-filter">De<input data-filter="start" type="date" min="2026-08-18" value="${esc(state.filters.start || '')}"></label><label class="date-filter">Até<input data-filter="end" type="date" min="2026-08-18" value="${esc(state.filters.end || '')}"></label><select data-filter="campaign">${selectOptions(options('campaign_name'),state.filters.campaign,'Campanhas')}</select><select data-filter="adset">${selectOptions(options('adset_name'),state.filters.adset,'Conjuntos')}</select><select data-filter="origin">${selectOptions(options('origin'),state.filters.origin,'Origem')}</select><select data-filter="interest">${selectOptions(options('interest'),state.filters.interest,'Interesse')}</select><select data-filter="status">${selectOptions(CRM_STATUSES,state.filters.status,'Status CRM')}</select><select data-filter="owner">${selectOptions(options('owner'),state.filters.owner,'Responsável')}</select><button class="clear-filters" id="clear-filters">Limpar filtros</button></section>
   <nav class="view-tabs"><button class="${state.view==='list'?'active':''}" data-view="list">Lista <b>${leads.length}</b></button><button class="${state.view==='pipeline'?'active':''}" data-view="pipeline">Pipeline</button></nav>
   ${state.view === 'list' ? `<section class="lead-list"><div class="list-heading"><span>Lead</span><span>Status e ações</span></div>${leads.length ? leads.map(l=>renderLead(l)).join('') : '<div class="empty">Nenhum lead encontrado com estes filtros.</div>'}</section>` : `<section class="pipeline">${PIPELINE_STATUSES.map(status => `<div class="pipeline-column"><div class="pipeline-title"><span>${status}</span><b>${leads.filter(l=>crmOf(l).status===status).length}</b></div>${leads.filter(l=>crmOf(l).status===status).map(l=>renderLead(l,true)).join('') || '<p class="empty-column">Sem leads</p>'}</div>`).join('')}</section>`}
   ${state.selected ? renderDrawer(state.selected) : ''}</main>`;
@@ -47,7 +69,20 @@ function renderDrawer(lead) {
 async function save(lead, changes) { state.crm[leadId(lead)] = await persistCrmRecord(leadId(lead), changes); render(); }
 function bind() {
   document.querySelector('#search')?.addEventListener('input', e => { state.query=e.target.value; render(); });
-  document.querySelectorAll('[data-filter]').forEach(el => el.addEventListener('change', e => { state.filters[e.target.dataset.filter]=e.target.value; render(); }));
+  document.querySelectorAll('[data-filter]').forEach(el => el.addEventListener('change', e => {
+    const key = e.target.dataset.filter;
+    if (key === 'period') applyPeriodPreset(e.target.value);
+    else { state.filters[key] = e.target.value; if (key === 'start' || key === 'end') state.filters.period = ''; }
+    render();
+  }));
+  document.querySelectorAll('[data-metric]').forEach(el => el.addEventListener('click', () => {
+    const metricFilter = el.dataset.metric; clearFilters();
+    if (metricFilter === 'today') applyPeriodPreset('today');
+    else if (metricFilter === 'uncontacted') state.filters.uncontacted = true;
+    else if (metricFilter !== 'all') state.filters.status = metricFilter;
+    render();
+  }));
+  document.querySelector('#clear-filters')?.addEventListener('click', () => { clearFilters(); render(); });
   document.querySelectorAll('[data-view]').forEach(el => el.addEventListener('click', e => { state.view=e.currentTarget.dataset.view; render(); }));
   document.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', () => { state.selected = state.leads.find(l=>leadId(l)===el.dataset.open); render(); }));
   document.querySelectorAll('[data-status]').forEach(el => el.addEventListener('change', () => { const lead=state.leads.find(l=>leadId(l)===el.dataset.status); save(lead,{status:el.value}); }));

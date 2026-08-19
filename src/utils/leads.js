@@ -20,7 +20,8 @@ export function origin(lead) {
 export function displayInterest(lead) {
   const raw = String(interest(lead));
   const normalized = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[\s_-]+/g, '');
-  return normalized === 'uniroutilaoagradavel' ? 'Unir o útil ao agradável' : raw;
+  if (normalized === 'uniroutilaoagradavel') return 'Unir o útil ao agradável';
+  return raw.split(/[\s_-]+/).filter(Boolean).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') || 'Não informado';
 }
 export const normalizePhone = (phone) => String(phone || '').replace(/\D/g, '');
 export function whatsappUrl(lead) {
