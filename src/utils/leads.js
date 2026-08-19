@@ -3,8 +3,24 @@ const BUDGET_KEY = 'nossos_lotes_têm_parcelas_a_partir_de_r$_1.258._você_acred
 
 export const value = (lead, key) => lead[key] ?? '';
 export const leadId = (lead) => String(lead.id || `${lead.email}|${lead['número_do_whatsapp']}|${lead.created_time}`);
-export const interest = (lead) => value(lead, INTEREST_KEY) || 'Não informado';
-export const budget = (lead) => value(lead, BUDGET_KEY) || 'Não informado';
+const normalizeKey = (key = '') => String(key).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+function flexibleValue(lead, key) {
+  if (lead[key] != null) return lead[key];
+  const found = Object.keys(lead).find(header => normalizeKey(header) === normalizeKey(key));
+  return found ? lead[found] : '';
+}
+export const interest = (lead) => flexibleValue(lead, INTEREST_KEY) || 'Não informado';
+export const budget = (lead) => flexibleValue(lead, BUDGET_KEY) || 'Não informado';
+export function origin(lead) {
+  const raw = String(value(lead, 'platform') || '').trim().toLowerCase().replace(/[^a-z]/g, '');
+  if (raw === 'fb' || raw === 'facebook') return 'Facebook';
+  if (raw === 'ig' || raw === 'instagram') return 'Instagram';
+  return value(lead, 'platform') || 'Não informado';
+}
+export function displayInterest(lead) {
+  const raw = String(interest(lead));
+  return raw.toLowerCase().replace(/[\s_-]+/g, '') === 'uniroutilaoagradavel' ? 'Unir o útil ao agradável' : raw;
+}
 export const normalizePhone = (phone) => String(phone || '').replace(/\D/g, '');
 export function whatsappUrl(lead) {
   const phone = normalizePhone(value(lead, 'número_do_whatsapp'));
