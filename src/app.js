@@ -102,9 +102,14 @@ function bind() {
 }
 async function syncLeads({ initial = false } = {}) {
   if (state.syncing) return;
+  // Evita que a atualização automática redesenhe o formulário durante a edição.
+  if (state.selected && !initial) return;
   state.syncing = true;
   try {
     const snapshot = CRM_API_URL ? await loadCrmSnapshot() : { leads: await loadGoogleSheetLeads() };
+    // Caso o painel tenha sido aberto enquanto a consulta estava em andamento,
+    // descarta esta resposta e preserva os campos que a corretora está digitando.
+    if (state.selected && !initial) return;
     state.leads = dedupeAndSort(snapshot.leads);
     if (snapshot.crm) state.crm = snapshot.crm;
     state.source = `Planilha conectada · atualizada ${new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' }).format(new Date())}`;
