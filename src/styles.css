@@ -417,9 +417,24 @@ h1 {
   bottom: 0;
   width: min(570px, 100vw);
   background: white;
-  overflow: auto;
-  padding: 34px 32px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   box-shadow: -8px 0 30px #10182826;
+}
+.drawer-top {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  padding: 34px 32px 0;
+  background: white;
+  box-shadow: 0 8px 18px #1018280d;
+}
+.drawer-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 32px 34px;
 }
 .drawer h2 {
   font-size: 25px;
@@ -539,7 +554,13 @@ form textarea {
     flex: 1;
   }
   .drawer {
-    padding: 28px 20px;
+    padding: 0;
+  }
+  .drawer-top {
+    padding: 28px 20px 0;
+  }
+  .drawer-scroll {
+    padding: 0 20px 28px;
   }
   .details {
     grid-template-columns: 1fr;
