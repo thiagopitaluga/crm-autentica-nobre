@@ -347,7 +347,12 @@ h1 {
   padding: 8px 11px;
   font-size: 12px;
   font-weight: 750;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
+.whatsapp-icon { width: 16px; height: 16px; flex: none; }
 .whatsapp:disabled {
   background: #d0d5dd;
   cursor: not-allowed;
