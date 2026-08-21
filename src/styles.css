@@ -434,7 +434,8 @@ h1 {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 32px 34px;
+  margin: 0;
+  padding: 0 32px 20px;
 }
 .drawer h2 {
   font-size: 25px;
@@ -457,6 +458,35 @@ h1 {
   border-top: 1px solid var(--line);
   padding: 21px 0;
 }
+.accordion {
+  border-bottom: 1px solid var(--line);
+}
+.accordion-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  background: white;
+  padding: 17px 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 750;
+  text-align: left;
+}
+.accordion-icon { color: var(--muted); font-size: 18px; transition: transform .2s; }
+.accordion.open .accordion-icon { transform: rotate(180deg); }
+.accordion-content { display: none; padding: 1px 0 20px; }
+.accordion.open .accordion-content { display: block; }
+.commercial-section { border-top: 0; }
+.drawer-footer {
+  flex: none;
+  padding: 14px 32px 22px;
+  border-top: 1px solid var(--line);
+  background: white;
+  box-shadow: 0 -8px 18px #1018280d;
+}
+.drawer-footer .save { margin: 0; }
 .drawer h3 {
   font-size: 14px;
   margin-bottom: 15px;
@@ -560,7 +590,10 @@ form textarea {
     padding: 28px 20px 0;
   }
   .drawer-scroll {
-    padding: 0 20px 28px;
+    padding: 0 20px 16px;
+  }
+  .drawer-footer {
+    padding: 12px 20px 18px;
   }
   .details {
     grid-template-columns: 1fr;
