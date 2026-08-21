@@ -351,6 +351,8 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 .whatsapp-icon { width: 16px; height: 16px; flex: none; }
 .whatsapp:disabled {
